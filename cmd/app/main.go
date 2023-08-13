@@ -8,7 +8,10 @@ import (
 )
 
 func main() {
-	collector := colly.NewCollector()
+	collector := colly.NewCollector(
+		colly.MaxDepth(5),
+		colly.Async(true),
+	)
 	crawler := crawler.NewCrawler(collector)
 	handler := handler.NewHandler(crawler)
 

@@ -36,6 +36,8 @@ type Report struct {
 }
 
 func (v *ViolenceAgainstWomen) GetAllData(ctx context.Context) ([]map[string]interface{}, error) {
+	v.Collector.Limit(&colly.LimitRule{DomainGlob: "*", Parallelism: 5})
+
 	var AllReports []Report
 	v.Collector.OnHTML("div[id^=conteudo_repPeriodo_divPeriodo]", func(div *colly.HTMLElement) {
 
@@ -83,7 +85,14 @@ func (v *ViolenceAgainstWomen) GetAllData(ctx context.Context) ([]map[string]int
 		AllReports = append(AllReports, MonthReport)
 	})
 
-	err := v.Collector.Visit("http://www.ssp.sp.gov.br/Estatistica/ViolenciaMulher.aspx")
+	v.Collector.Visit("http://www.ssp.sp.gov.br/Estatistica/ViolenciaMulher.aspx")
+	v.Collector.Wait()
+
+	var err error
+	v.Collector.OnError(func(r *colly.Response, errorReceived error) {
+		err = errorReceived
+	})
+
 	if err != nil {
 		fmt.Println("Visit", err.Error())
 		return nil, err
