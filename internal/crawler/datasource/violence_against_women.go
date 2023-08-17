@@ -189,20 +189,111 @@ func (v *ViolenceAgainstWomen) GetDataByYear(ctx context.Context, year int) ([]m
 	})
 
 	if err != nil {
-		fmt.Println("Visit", err.Error())
 		return nil, err
 	}
 
 	inrec, err := json.Marshal(AllReports)
 	if err != nil {
-		fmt.Println("Marshal", err.Error())
 		return nil, err
 	}
 
 	var inInterface []map[string]interface{}
 	err = json.Unmarshal(inrec, &inInterface)
 	if err != nil {
-		fmt.Println("Unmarshal", err.Error())
+		return nil, err
+	}
+
+	return inInterface, nil
+}
+
+func (v *ViolenceAgainstWomen) GetDataByYearMonth(ctx context.Context, year, month int) ([]map[string]interface{}, error) {
+	collector := colly.NewCollector(
+		colly.MaxDepth(5),
+		colly.Async(true),
+	)
+
+	collector.Limit(&colly.LimitRule{DomainGlob: "*", Parallelism: 5})
+
+	var AllReports []Report
+	collector.OnHTML("div[id^=conteudo_repPeriodo_divPeriodo]", func(div *colly.HTMLElement) {
+
+		divId := div.Attr("id")
+		period, _ := getPeriod(divId)
+		currentMonth, currentYear, err := getMonthYear(*period, div)
+		if err != nil {
+			fmt.Println("Error getting month year", err)
+		}
+
+		if *currentYear != year {
+			return
+		}
+
+		if *currentMonth != month {
+			return
+		}
+
+		MonthReport := Report{
+			Month: *currentMonth,
+			Year:  *currentYear,
+		}
+
+		var events []Event
+		div.ForEach("table[id^=conteudo_repPeriodo_grdOcorrencias]", func(index int, table *colly.HTMLElement) {
+
+			table.ForEach("tr", func(rowIndex int, row *colly.HTMLElement) {
+				if rowIndex == 0 {
+					return
+				}
+
+				var event Event
+				row.ForEach("td", func(cellIndex int, cell *colly.HTMLElement) {
+					switch cellIndex {
+					case 0:
+						event.EventType = strings.TrimSpace(cell.Text)
+					case 1:
+						event.TotalCapital, _ = strconv.Atoi(strings.TrimSpace(cell.Text))
+					case 2:
+						event.TotalDemacro, _ = strconv.Atoi(strings.TrimSpace(cell.Text))
+					case 3:
+						event.TotalInterior, _ = strconv.Atoi(strings.TrimSpace(cell.Text))
+					case 4:
+						event.Total, _ = strconv.Atoi(strings.TrimSpace(cell.Text))
+					}
+				})
+
+				events = append(events, event)
+			})
+		})
+
+		MonthReport.Events = events
+		AllReports = append(AllReports, MonthReport)
+
+	})
+
+	collector.OnRequest(func(r *colly.Request) {
+		fmt.Println("OnRequest", r)
+	})
+
+	collector.Visit("http://www.ssp.sp.gov.br/Estatistica/ViolenciaMulher.aspx")
+	collector.Wait()
+
+	var err error
+	collector.OnError(func(r *colly.Response, errorReceived error) {
+		err = errorReceived
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	inrec, err := json.Marshal(AllReports)
+	if err != nil {
+		return nil, err
+	}
+
+	var inInterface []map[string]interface{}
+	err = json.Unmarshal(inrec, &inInterface)
+	if err != nil {
 		return nil, err
 	}
 

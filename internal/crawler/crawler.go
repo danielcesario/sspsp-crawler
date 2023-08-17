@@ -10,6 +10,7 @@ import (
 type CrawlerDatasource interface {
 	GetAllData(ctx context.Context) ([]map[string]interface{}, error)
 	GetDataByYear(ctx context.Context, year int) ([]map[string]interface{}, error)
+	GetDataByYearMonth(ctx context.Context, year, month int) ([]map[string]interface{}, error)
 }
 
 type Crawler struct {
@@ -32,6 +33,15 @@ func (c *Crawler) GetDataByYear(ctx context.Context, datType string, year int) (
 	switch datType {
 	case "violencia-contra-mulher":
 		return datasource.NewCollectorViolenceAgainstWomen().GetDataByYear(ctx, year)
+	default:
+		return nil, fmt.Errorf("unknown data type")
+	}
+}
+
+func (c *Crawler) GetDataByYearMonth(ctx context.Context, datType string, year int, month int) ([]map[string]interface{}, error) {
+	switch datType {
+	case "violencia-contra-mulher":
+		return datasource.NewCollectorViolenceAgainstWomen().GetDataByYearMonth(ctx, year, month)
 	default:
 		return nil, fmt.Errorf("unknown data type")
 	}
