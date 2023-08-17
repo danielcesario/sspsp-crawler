@@ -1,25 +1,45 @@
 package handler
 
 import (
+	"context"
 	"net/http"
+	"strconv"
 
-	"github.com/danielcesario/sspsp-crawler/internal/crawler"
 	"github.com/gin-gonic/gin"
 )
 
-type Handler struct {
-	Crawler crawler.Crawler
+type CrawlerService interface {
+	GetData(ctx context.Context, datType string) ([]map[string]interface{}, error)
+	GetDataByYear(ctx context.Context, datType string, year int) ([]map[string]interface{}, error)
 }
 
-func NewHandler(crawler crawler.Crawler) *Handler {
+type Handler struct {
+	service CrawlerService
+}
+
+func NewHandler(crawler CrawlerService) *Handler {
 	return &Handler{
-		Crawler: crawler,
+		service: crawler,
 	}
 }
 
 func (h *Handler) GetAllData(context *gin.Context) {
 	dataType := context.Param("dataType")
-	result, err := h.Crawler.GetData(context, dataType)
+	result, err := h.service.GetData(context, dataType)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, nil)
+		context.Abort()
+		return
+	}
+
+	context.JSON(http.StatusOK, result)
+}
+
+func (h *Handler) GetDataByYear(context *gin.Context) {
+	dataType := context.Param("dataType")
+	year, _ := strconv.Atoi(context.Param("year"))
+
+	result, err := h.service.GetDataByYear(context, dataType, year)
 	if err != nil {
 		context.JSON(http.StatusBadRequest, nil)
 		context.Abort()

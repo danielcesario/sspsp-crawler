@@ -4,28 +4,34 @@ import (
 	"context"
 	"fmt"
 
-	crawler "github.com/danielcesario/sspsp-crawler/internal/crawler/datasource"
-	"github.com/gocolly/colly/v2"
+	"github.com/danielcesario/sspsp-crawler/internal/crawler/datasource"
 )
 
 type CrawlerDatasource interface {
 	GetAllData(ctx context.Context) ([]map[string]interface{}, error)
+	GetDataByYear(ctx context.Context, year int) ([]map[string]interface{}, error)
 }
 
 type Crawler struct {
-	Collector *colly.Collector
 }
 
-func NewCrawler(collector *colly.Collector) Crawler {
-	return Crawler{
-		Collector: collector,
-	}
+func NewService() *Crawler {
+	return &Crawler{}
 }
 
 func (c *Crawler) GetData(ctx context.Context, datType string) ([]map[string]interface{}, error) {
 	switch datType {
 	case "violencia-contra-mulher":
-		return crawler.NewCollectorViolenceAgainstWomen(c.Collector).GetAllData(ctx)
+		return datasource.NewCollectorViolenceAgainstWomen().GetAllData(ctx)
+	default:
+		return nil, fmt.Errorf("unknown data type")
+	}
+}
+
+func (c *Crawler) GetDataByYear(ctx context.Context, datType string, year int) ([]map[string]interface{}, error) {
+	switch datType {
+	case "violencia-contra-mulher":
+		return datasource.NewCollectorViolenceAgainstWomen().GetDataByYear(ctx, year)
 	default:
 		return nil, fmt.Errorf("unknown data type")
 	}
