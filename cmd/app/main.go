@@ -16,5 +16,4 @@ func main() {
 	r.GET("/api/ssp/sp/:dataType/:year/:month", handler.GetDataByYearMonth)
 
 	r.Run(":8080")
-
 }

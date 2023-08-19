@@ -2,7 +2,10 @@ module github.com/danielcesario/sspsp-crawler
 
 go 1.20
 
-require github.com/gocolly/colly/v2 v2.1.0
+require (
+	github.com/gin-gonic/gin v1.9.1
+	github.com/gocolly/colly/v2 v2.1.0
+)
 
 require (
 	github.com/PuerkitoBio/goquery v1.5.1 // indirect
@@ -15,7 +18,6 @@ require (
 	github.com/chenzhuoyu/iasm v0.9.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
-	github.com/gin-gonic/gin v1.9.1 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.15.0 // indirect

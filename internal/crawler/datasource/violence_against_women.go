@@ -50,41 +50,11 @@ func (v *ViolenceAgainstWomen) GetAllData(ctx context.Context) ([]map[string]int
 			fmt.Println("Error getting month year", err)
 		}
 
-		MonthReport := Report{
-			Month: *month,
-			Year:  *year,
-		}
-
-		var events []Event
-		div.ForEach("table[id^=conteudo_repPeriodo_grdOcorrencias]", func(index int, table *colly.HTMLElement) {
-
-			table.ForEach("tr", func(rowIndex int, row *colly.HTMLElement) {
-				if rowIndex == 0 {
-					return
-				}
-
-				var event Event
-				row.ForEach("td", func(cellIndex int, cell *colly.HTMLElement) {
-					switch cellIndex {
-					case 0:
-						event.EventType = strings.TrimSpace(cell.Text)
-					case 1:
-						event.TotalCapital, _ = strconv.Atoi(strings.TrimSpace(cell.Text))
-					case 2:
-						event.TotalDemacro, _ = strconv.Atoi(strings.TrimSpace(cell.Text))
-					case 3:
-						event.TotalInterior, _ = strconv.Atoi(strings.TrimSpace(cell.Text))
-					case 4:
-						event.Total, _ = strconv.Atoi(strings.TrimSpace(cell.Text))
-					}
-				})
-
-				events = append(events, event)
-			})
+		AllReports = append(AllReports, Report{
+			Month:  *month,
+			Year:   *year,
+			Events: getEventsFromTable(div),
 		})
-
-		MonthReport.Events = events
-		AllReports = append(AllReports, MonthReport)
 	})
 
 	collector.Visit("http://www.ssp.sp.gov.br/Estatistica/ViolenciaMulher.aspx")
@@ -96,20 +66,17 @@ func (v *ViolenceAgainstWomen) GetAllData(ctx context.Context) ([]map[string]int
 	})
 
 	if err != nil {
-		fmt.Println("Visit", err.Error())
 		return nil, err
 	}
 
 	inrec, err := json.Marshal(AllReports)
 	if err != nil {
-		fmt.Println("Marshal", err.Error())
 		return nil, err
 	}
 
 	var inInterface []map[string]interface{}
 	err = json.Unmarshal(inrec, &inInterface)
 	if err != nil {
-		fmt.Println("Unmarshal", err.Error())
 		return nil, err
 	}
 
@@ -138,46 +105,12 @@ func (v *ViolenceAgainstWomen) GetDataByYear(ctx context.Context, year int) ([]m
 			return
 		}
 
-		MonthReport := Report{
-			Month: *month,
-			Year:  *currentYear,
-		}
-
-		var events []Event
-		div.ForEach("table[id^=conteudo_repPeriodo_grdOcorrencias]", func(index int, table *colly.HTMLElement) {
-
-			table.ForEach("tr", func(rowIndex int, row *colly.HTMLElement) {
-				if rowIndex == 0 {
-					return
-				}
-
-				var event Event
-				row.ForEach("td", func(cellIndex int, cell *colly.HTMLElement) {
-					switch cellIndex {
-					case 0:
-						event.EventType = strings.TrimSpace(cell.Text)
-					case 1:
-						event.TotalCapital, _ = strconv.Atoi(strings.TrimSpace(cell.Text))
-					case 2:
-						event.TotalDemacro, _ = strconv.Atoi(strings.TrimSpace(cell.Text))
-					case 3:
-						event.TotalInterior, _ = strconv.Atoi(strings.TrimSpace(cell.Text))
-					case 4:
-						event.Total, _ = strconv.Atoi(strings.TrimSpace(cell.Text))
-					}
-				})
-
-				events = append(events, event)
-			})
+		AllReports = append(AllReports, Report{
+			Month:  *month,
+			Year:   *currentYear,
+			Events: getEventsFromTable(div),
 		})
 
-		MonthReport.Events = events
-		AllReports = append(AllReports, MonthReport)
-
-	})
-
-	collector.OnRequest(func(r *colly.Request) {
-		fmt.Println("OnRequest", r)
 	})
 
 	collector.Visit("http://www.ssp.sp.gov.br/Estatistica/ViolenciaMulher.aspx")
@@ -232,46 +165,12 @@ func (v *ViolenceAgainstWomen) GetDataByYearMonth(ctx context.Context, year, mon
 			return
 		}
 
-		MonthReport := Report{
-			Month: *currentMonth,
-			Year:  *currentYear,
-		}
-
-		var events []Event
-		div.ForEach("table[id^=conteudo_repPeriodo_grdOcorrencias]", func(index int, table *colly.HTMLElement) {
-
-			table.ForEach("tr", func(rowIndex int, row *colly.HTMLElement) {
-				if rowIndex == 0 {
-					return
-				}
-
-				var event Event
-				row.ForEach("td", func(cellIndex int, cell *colly.HTMLElement) {
-					switch cellIndex {
-					case 0:
-						event.EventType = strings.TrimSpace(cell.Text)
-					case 1:
-						event.TotalCapital, _ = strconv.Atoi(strings.TrimSpace(cell.Text))
-					case 2:
-						event.TotalDemacro, _ = strconv.Atoi(strings.TrimSpace(cell.Text))
-					case 3:
-						event.TotalInterior, _ = strconv.Atoi(strings.TrimSpace(cell.Text))
-					case 4:
-						event.Total, _ = strconv.Atoi(strings.TrimSpace(cell.Text))
-					}
-				})
-
-				events = append(events, event)
-			})
+		AllReports = append(AllReports, Report{
+			Month:  *currentMonth,
+			Year:   *currentYear,
+			Events: getEventsFromTable(div),
 		})
 
-		MonthReport.Events = events
-		AllReports = append(AllReports, MonthReport)
-
-	})
-
-	collector.OnRequest(func(r *colly.Request) {
-		fmt.Println("OnRequest", r)
 	})
 
 	collector.Visit("http://www.ssp.sp.gov.br/Estatistica/ViolenciaMulher.aspx")
@@ -298,6 +197,38 @@ func (v *ViolenceAgainstWomen) GetDataByYearMonth(ctx context.Context, year, mon
 	}
 
 	return inInterface, nil
+}
+
+func getEventsFromTable(div *colly.HTMLElement) []Event {
+	var events []Event
+	div.ForEach("table[id^=conteudo_repPeriodo_grdOcorrencias]", func(index int, table *colly.HTMLElement) {
+
+		table.ForEach("tr", func(rowIndex int, row *colly.HTMLElement) {
+			if rowIndex == 0 {
+				return
+			}
+
+			var event Event
+			row.ForEach("td", func(cellIndex int, cell *colly.HTMLElement) {
+				switch cellIndex {
+				case 0:
+					event.EventType = strings.TrimSpace(cell.Text)
+				case 1:
+					event.TotalCapital, _ = strconv.Atoi(strings.TrimSpace(cell.Text))
+				case 2:
+					event.TotalDemacro, _ = strconv.Atoi(strings.TrimSpace(cell.Text))
+				case 3:
+					event.TotalInterior, _ = strconv.Atoi(strings.TrimSpace(cell.Text))
+				case 4:
+					event.Total, _ = strconv.Atoi(strings.TrimSpace(cell.Text))
+				}
+			})
+
+			events = append(events, event)
+		})
+	})
+
+	return events
 }
 
 func getPeriod(divId string) (*string, error) {
